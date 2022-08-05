@@ -1,2 +1,2 @@
-# UFPI_arquitetura
+# UFPI-arquitetura-computadores
 Repositório para disciplina de arquitetura de dados
