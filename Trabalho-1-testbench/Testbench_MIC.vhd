@@ -121,7 +121,7 @@ Architecture Type_1 OF Testbench_MIC IS
 
 		--qual a quantidade de/2 ciclos?
 
-		IF (Clk_count = 50) THEN     
+		IF (Clk_count = 60) THEN     
 			REPORT "Stopping simulkation after 34 cycles";
 			Wait;       
 		END IF;
@@ -608,7 +608,60 @@ Architecture Type_1 OF Testbench_MIC IS
 
 		REPORT "FIM DO JNEG";
 
-		-- INSP (incrementa AC)
+		wait for 40 ns; -- Ciclo 47:
+
+		Signal_RESET		<= '1';
+
+		wait for 40 ns; -- Ciclo 48:
+
+		Signal_RESET		<= '0';
+
+		--INSP (SP:= SP + Y; 0 <= Y <= 255)
+		--Descricao: Incrementa SP
+		-- Considerações:
+		-- > O valor Y = 00001010
+		-- > O valor final de SP deve ser SP = 0000000000001010
+
+		-- Inserindo a instrução no registrador IR
+		Signal_MEM_TO_MBR	<= "1111110000001010"; 	-- Instrução
+		Signal_DATA_OK 		<= '1';					-- Habilita leitura de MBR
+		
+		wait for 40 ns;  -- Ciclo 49: Grava a instrução em IR
+
+		Signal_AMUX 		<= '1'; 	-- Seleciona MBR
+		Signal_ALU 			<= "10";	-- Transparência
+		Signal_SH   		<= "00"; 	-- Não desloca
+		Signal_C 			<= "0011"; 	-- Seleciona IR
+		Signal_ENC	 		<= '1';		-- Habilita gravação no banco de registradores
+
+		wait for 40 ns;  -- Ciclo 50: Faz a máscara e grava o resultado em A
+
+		Signal_B 			<= "0011"; 	-- Coloca IR no barramento B
+		Signal_A			<= "1001";	-- Coloca BMASK no barramento A
+		Signal_AMUX 		<= '0'; 	-- Seleciona A
+		Signal_ALU 			<= "01";	-- Operacao AND
+		Signal_C 			<= "1010"; 	-- Seleciona A
+		Signal_ENC	 		<= '1';		-- Habilita gravação no banco de registradores
+		
+		wait for 40 ns;  -- Ciclo 51: Faz a soma de A com SP, salva resultado em SP
+
+		Signal_B 			<= "0010"; 	-- Coloca SP no barramento B
+		Signal_A			<= "1010";	-- Coloca A no barramento A
+		Signal_AMUX 		<= '0'; 	-- Seleciona A
+		Signal_ALU 			<= "00";	-- Operacao Soma
+		Signal_C 			<= "0010"; 	-- Seleciona SP
+		Signal_ENC	 		<= '1';		-- Habilita gravação no banco de registradores
+	
+		wait for 40 ns;  -- Ciclo 52: Grava o resultado em MBR para verificação
+
+		Signal_ENC	 		<= '0';		-- Desabilita gravação no banco de registradores
+		Signal_MBR			<= '1';		-- Habilita a escrita em MBR
+
+		wait for 40 ns;  -- Ciclo 52: Desabilita escrita em MBR
+
+		Signal_MBR 			<= '0';		-- Desabilita a escrita em MBR
+
+		REPORT "FIM DO LOCO";
 
 		wait;
 		
